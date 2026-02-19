@@ -1,360 +1,283 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Serenity OS | Master Console</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;400&family=Baskervville&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --admin-gold: #e9c46a;
+            --bio-mint: #74c69d;
+            --sidebar-glass: rgba(10, 15, 20, 0.95);
+            --safe-top: env(safe-area-inset-top, 20px);
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
+            --accent: var(--admin-gold);
+        }
 
-<title>Serenity Admin</title>
+        /* --- THEME STATES --- */
+        body.bio-glow-active { --accent: var(--bio-mint); }
 
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#000000">
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body, html { height: 100%; width: 100%; overflow: hidden; font-family: 'Outfit', sans-serif; background: #010505; color: #fff; }
 
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500&family=Baskervville&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        #water-canvas { position: fixed; top: 0; left: 0; z-index: 1; pointer-events: none; }
 
-<style>
-:root {
- --admin-gold: #e9c46a;
- --ocean: #2a9d8f;
- --glass: rgba(255, 255, 255, 0.96);
- --sidebar-glass: rgba(15, 25, 35, 0.9);
- --safe-top: env(safe-area-inset-top);
- --safe-bottom: env(safe-area-inset-bottom);
-}
+        /* --- UI COMPONENTS --- */
+        header {
+            position: fixed; top: 0; width: 100%; z-index: 100;
+            padding: var(--safe-top) 20px 15px;
+            display: flex; align-items: center; justify-content: space-between;
+            background: linear-gradient(to bottom, rgba(1,5,5,0.95), transparent);
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        header.hidden { transform: translateY(-100%); }
 
-/* Light Mode Overrides */
-body.light-mode { background: #f0f2f5; color: #1a1a1a; }
-body.light-mode .card { background: rgba(255, 255, 255, 0.9); }
-body.light-mode h1 { color: #1a1a1a; }
-body.light-mode .nav-item { color: #333; background: rgba(0,0,0,0.05); }
+        .menu-trigger { background: none; border: none; font-size: 1.6rem; color: var(--accent); cursor: pointer; transition: 0.3s; }
 
-* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { height: 100%; overscroll-behavior: none; background: #000; color: #fff; transition: background 0.5s ease; }
+        h1 { font-family: 'Baskervville', serif; font-size: 1.1rem; letter-spacing: 3px; font-weight: 300; color: #fff; text-shadow: 0 0 15px rgba(255,255,255,0.2); }
 
-body { font-family: 'Outfit', sans-serif; display: flex; flex-direction: column; overflow: hidden; }
+        /* --- SIDEBAR --- */
+        .sidebar {
+            position: fixed; top: 0; left: -285px; width: 285px; height: 100%;
+            background: var(--sidebar-glass); backdrop-filter: blur(35px); -webkit-backdrop-filter: blur(35px);
+            z-index: 2000; transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            border-right: 1px solid rgba(255,255,255,0.05);
+            padding: calc(40px + var(--safe-top)) 25px var(--safe-bottom);
+            overflow-y: auto;
+        }
+        .sidebar.active { transform: translateX(285px); box-shadow: 20px 0 50px rgba(0,0,0,0.5); }
 
-/* 3D CANVAS */
-#water-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4); opacity: 0; pointer-events: none;
+            transition: 0.5s; z-index: 1999;
+        }
+        .overlay.active { opacity: 1; pointer-events: auto; }
 
-/* HEADER */
-header {
- position: relative;
- padding: calc(15px + var(--safe-top)) 16px 8px;
- text-align: center;
- transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
- z-index: 100;
- display: flex;
- justify-content: center;
- align-items: center;
-}
-header.hidden { transform: translateY(-80px); opacity: 0; }
+        .nav-label { font-size: 0.65rem; color: var(--accent); text-transform: uppercase; letter-spacing: 4px; margin: 30px 0 12px 10px; display: block; opacity: 0.7; }
+        
+        .nav-item {
+            padding: 16px; margin: 6px 0; border-radius: 16px;
+            background: rgba(255,255,255,0.03); color: #fff;
+            text-decoration: none; display: flex; align-items: center; gap: 14px;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .nav-item:active { transform: scale(0.96); background: rgba(255,255,255,0.08); }
 
-.menu-trigger {
-  position: absolute;
-  left: 20px;
-  font-size: 1.5rem;
-  color: var(--admin-gold);
-  background: none;
-  border: none;
-  cursor: pointer;
-  z-index: 101;
-}
+        .submenu { max-height: 0; overflow: hidden; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1); padding-left: 10px; }
+        .submenu.active { max-height: 300px; margin-bottom: 15px; }
+        .sub-item { padding: 12px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; color: rgba(255,255,255,0.7); }
+        
+        .btn-toggle { 
+            background: none; border: 1px solid var(--accent); color: var(--accent);
+            padding: 4px 12px; border-radius: 20px; font-size: 0.65rem; font-weight: bold;
+        }
 
-h1 { font-family: 'Baskervville', serif; font-size: 1.4rem; letter-spacing: 1px; transition: color 0.8s ease; }
-.subtitle { 
- font-size: 0.45rem; letter-spacing: 5px; text-transform: uppercase; 
- color: var(--admin-gold); display: flex; align-items: center; justify-content: center; gap: 6px; 
- position: absolute; top: var(--safe-top); margin-top: 5px;
-}
+        /* --- MAIN APP FRAME --- */
+        .app {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            padding: calc(75px + var(--safe-top)) 12px calc(25px + var(--safe-bottom));
+            z-index: 50; transition: 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .app.full { padding: 0; }
 
-/* SIDEBAR */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: -280px;
-  width: 280px;
-  height: 100%;
-  background: var(--sidebar-glass);
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
-  z-index: 2000;
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  border-right: 1px solid rgba(233, 196, 106, 0.2);
-  padding: calc(40px + var(--safe-top)) 20px;
-  overflow-y: auto;
-}
-.sidebar.active { transform: translateX(280px); }
+        .card-wrapper {
+            position: relative; height: 100%; width: 100%; border-radius: 28px;
+            background: rgba(0, 5, 5, 0.4); overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        }
+        .app.full .card-wrapper { border-radius: 0; border: none; }
 
-.sidebar-overlay {
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.5);
-  opacity: 0; pointer-events: none;
-  transition: 0.5s; z-index: 1999;
-}
-.sidebar-overlay.active { opacity: 1; pointer-events: auto; }
+        /* Glowing Border logic */
+        .card-wrapper::after {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: conic-gradient(transparent, transparent, var(--accent), transparent);
+            animation: rotate 6s linear infinite; z-index: -1; opacity: 0.4;
+        }
+        @keyframes rotate { 100% { transform: rotate(360deg); } }
 
-.nav-label { font-size: 0.6rem; color: var(--admin-gold); text-transform: uppercase; letter-spacing: 2px; margin: 20px 0 10px 10px; display: block; opacity: 0.7; }
+        iframe { width: 100%; height: 100%; border: none; background: transparent; transition: opacity 0.4s; }
 
-.nav-item {
-  padding: 15px 12px;
-  margin: 5px 0;
-  border-radius: 12px;
-  color: #fff;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  transition: 0.3s;
-  background: rgba(255,255,255,0.05);
-  position: relative;
-  cursor: pointer;
-}
-.nav-item:hover { background: rgba(233, 196, 106, 0.15); }
+        /* --- LIQUID FAB --- */
+        .fab {
+            position: fixed; right: 25px; bottom: calc(25px + var(--safe-bottom));
+            width: 56px; height: 56px; border-radius: 50%;
+            background: rgba(0,0,0,0.85); border: 1px solid var(--accent);
+            color: var(--accent); display: flex; align-items: center; justify-content: center;
+            z-index: 1000; box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .fab:active { transform: scale(0.9) rotate(-15deg); }
 
-/* SUBMENU STYLES */
-.submenu {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.4s ease;
-    padding-left: 20px;
-}
-.submenu.active { max-height: 200px; margin-bottom: 10px; }
-
-.sub-item {
-    padding: 10px 12px;
-    font-size: 0.85rem;
-    color: rgba(255,255,255,0.7);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid rgba(233, 196, 106, 0.1);
-}
-.sub-toggle { 
-    background: none; border: 1px solid var(--admin-gold); color: var(--admin-gold);
-    padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; cursor: pointer;
-}
-
-/* NOTIFICATION FLUSH */
-.flush-active::after {
-  content: ''; position: absolute; top:0; left:0; width:100%; height:100%;
-  background: radial-gradient(circle, var(--admin-gold) 0%, transparent 70%);
-  opacity: 0.2; animation: fPulse 2s infinite;
-}
-@keyframes fPulse { 0%, 100% { opacity: 0.1; } 50% { opacity: 0.3; } }
-
-/* APP AREA */
-.app { 
- flex: 1; position: relative; 
- padding: 0 8px calc(70px + var(--safe-bottom)); 
- transition: 0.6s cubic-bezier(0.16, 1, 0.3, 1); 
- z-index: 50; 
-}
-.app.full { padding: 0; }
-
-.card-wrapper {
- position: relative; height: 100%; width: 100%; border-radius: 20px;
- padding: 1.5px; background: rgba(255,255,255,0.1); overflow: hidden;
- transition: 0.6s;
-}
-.app.full .card-wrapper { border-radius: 0; padding: 0; }
-
-.card-wrapper::before {
- content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
- background: conic-gradient(transparent, transparent, var(--admin-gold), transparent, #fff);
- animation: rotate 6s linear infinite; z-index: 1;
-}
-@keyframes rotate { 100% { transform: rotate(360deg); } }
-
-.card { 
- position: relative; height: 100%; width: 100%; border-radius: 19px;
- background: var(--glass); backdrop-filter: blur(40px);
- overflow: hidden; z-index: 2; 
-}
-.app.full .card { border-radius: 0; }
-
-iframe { width: 100%; height: 100%; border: none; background: transparent; transition: opacity 0.4s; }
-
-/* FAB */
-.fab {
- position: fixed; right: 20px; bottom: calc(20px + var(--safe-bottom));
- width: 46px; height: 46px; border-radius: 50%; border: none;
- background: rgba(0,0,0,0.7); color: var(--admin-gold);
- display: flex; align-items: center; justify-content: center;
- box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 1000;
- backdrop-filter: blur(10px); font-size: 18px; transition: 0.3s;
-}
-
-#flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 10000; opacity: 0; pointer-events: none; }
-</style>
+        /* Ripple Effect */
+        .ripple {
+            position: fixed; width: 2px; height: 2px; background: var(--accent);
+            border-radius: 50%; pointer-events: none; z-index: 9999;
+            animation: rip 1.6s ease-out forwards;
+        }
+        @keyframes rip { 0% { transform: scale(0); opacity: 1; } 100% { transform: scale(150); opacity: 0; } }
+    </style>
 </head>
+<body id="body-ctx">
 
-<body>
-
-<div id="flash"></div>
 <canvas id="water-canvas"></canvas>
-
-<div class="sidebar-overlay" id="overlay"></div>
-<nav class="sidebar" id="sidebar">
-    <h2 style="font-family: 'Baskervville'; color: var(--admin-gold); margin-bottom: 20px; font-weight: normal;">Serenity</h2>
-    
-    <span class="nav-label">Management</span>
-    <a href="#" class="nav-item" data-src="https://script.google.com/macros/s/AKfycbzpWGftLEvd2VMKDqRa466aKEW2Pt9qob9pvXzyx_ASm0Gmrsn-FjZTeMXD7LjMkvsuoQ/exec?page=admin"><span>📊</span> Dashboard</a>
-    <a href="#" class="nav-item" data-src="https://script.google.com/macros/s/AKfycbwxylngbDd2E43IPLMjV4ivM5RHVxNQKXHUb8qRnkuCetNryPcnBZ0eRJdZTJ8MtRbl6w/exec"><span>👥</span> Users</a>
-    
-    <span class="nav-label">System</span>
-    
-    <div class="nav-item" id="settings-parent"><span>⚙️</span> Settings</div>
-    <div class="submenu active" id="settings-sub">
-        <div class="sub-item">
-            <span>Dark Mode</span>
-            <button class="sub-toggle" id="mode-btn">ON</button>
-        </div>
-        <div class="sub-item">
-            <span>Full Screen</span>
-            <button class="sub-toggle" id="full-btn">OFF</button>
-        </div>
-    </div>
-
-    <a href="#" class="nav-item flush-active" id="notif-link" data-src="https://script.google.com/macros/s/AKfycbwxylngbDd2E43IPLMjV4ivM5RHVxNQKXHUb8qRnkuCetNryPcnBZ0eRJdZTJ8MtRbl6w/exec?page=admin"><span>🔔</span> Notifications</a>
-    
-    <div style="position: absolute; bottom: 30px; font-size: 0.55rem; color: rgba(255,255,255,0.3); letter-spacing: 2px;">V 2.0.4 STAYCATION</div>
-</nav>
+<div class="overlay" id="overlay"></div>
 
 <header id="hdr">
- <button class="menu-trigger" id="menuBtn">☰</button>
- <p class="subtitle"><span class="pulse"></span> Admin Console</p>
- <h1 id="title">Serenity</h1>
+    <button class="menu-trigger" id="menuBtn">☰</button>
+    <h1>Serenity Console</h1>
+    <div style="width: 24px;"></div> 
 </header>
 
-<section class="app" id="app">
- <div class="card-wrapper">
-  <div class="card">
-   <iframe id="content-frame" src="https://script.google.com/macros/s/AKfycbwxylngbDd2E43IPLMjV4ivM5RHVxNQKXHUb8qRnkuCetNryPcnBZ0eRJdZTJ8MtRbl6w/exec?page=admin"></iframe>
-  </div>
- </div>
-</section>
+<div class="sidebar" id="sidebar">
+    <div style="text-align: center; margin-bottom: 20px;">
+        <div id="bio-indicator" style="width: 40px; height: 4px; background: var(--accent); margin: 0 auto 10px; border-radius: 2px; box-shadow: 0 0 10px var(--accent);"></div>
+    </div>
 
-<button class="fab" id="btn">⛶</button>
+    <span class="nav-label">Management</span>
+    <div class="nav-item" data-src="https://script.google.com/macros/s/AKfycbzpWGftLEvd2VMKDqRa466aKEW2Pt9qob9pvXzyx_ASm0Gmrsn-FjZTeMXD7LjMkvsuoQ/exec?page=admin">📊 Dashboard</div>
+    <div class="nav-item" data-src="https://script.google.com/macros/s/AKfycbwxylngbDd2E43IPLMjV4ivM5RHVxNQKXHUb8qRnkuCetNryPcnBZ0eRJdZTJ8MtRbl6w/exec">👥 Users</div>
+
+    <span class="nav-label">Settings</span>
+    <div class="nav-item" id="setToggle">⚙️ System Prefs</div>
+    <div class="submenu active" id="setSub">
+        <div class="sub-item"><span>Bio-Glow</span><button class="btn-toggle" id="glowBtn">OFF</button></div>
+        <div class="sub-item"><span>Full View</span><button class="btn-toggle" id="fullBtn">OFF</button></div>
+    </div>
+
+    <div style="position: absolute; bottom: 30px; font-size: 0.5rem; opacity: 0.3; letter-spacing: 3px; width: 100%; text-align: left;">V 2.1.0 BIOLUME</div>
+</div>
+
+<main class="app" id="app">
+    <div class="card-wrapper">
+        <iframe id="frame" src="https://script.google.com/macros/s/AKfycbwxylngbDd2E43IPLMjV4ivM5RHVxNQKXHUb8qRnkuCetNryPcnBZ0eRJdZTJ8MtRbl6w/exec?page=admin"></iframe>
+    </div>
+</main>
+
+<div class="fab" id="fabBtn">⛶</div>
 
 <script>
 (() => {
- const app = document.getElementById('app');
- const hdr = document.getElementById('hdr');
- const btn = document.getElementById('btn');
- const menuBtn = document.getElementById('menuBtn');
- const sidebar = document.getElementById('sidebar');
- const overlay = document.getElementById('overlay');
- const frame = document.getElementById('content-frame');
- 
- const settingsParent = document.getElementById('settings-parent');
- const settingsSub = document.getElementById('settings-sub');
- const modeBtn = document.getElementById('mode-btn');
- const fullBtn = document.getElementById('full-btn');
+    // --- DOM Elements ---
+    const app = document.getElementById('app');
+    const hdr = document.getElementById('hdr');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const frame = document.getElementById('frame');
+    const glowBtn = document.getElementById('glowBtn');
+    const fullBtn = document.getElementById('fullBtn');
 
- // --- PERSISTENCE LOGIC ---
- const saveSettings = () => {
-    const prefs = {
-        lightMode: document.body.classList.contains('light-mode'),
-        fullScreen: app.classList.contains('full')
+    // --- State & Settings ---
+    const state = {
+        bioGlow: localStorage.getItem('serenity_bio') === 'true',
+        fullMode: localStorage.getItem('serenity_full') === 'true'
     };
-    localStorage.setItem('serenity_prefs', JSON.stringify(prefs));
- };
 
- const loadSettings = () => {
-    const saved = localStorage.getItem('serenity_prefs');
-    if (saved) {
-        const prefs = JSON.parse(saved);
-        if (prefs.lightMode) {
-            document.body.classList.add('light-mode');
-            modeBtn.innerText = 'OFF';
-        }
-        if (prefs.fullScreen) {
-            app.classList.add('full');
-            hdr.classList.add('hidden');
-            fullBtn.innerText = 'ON';
-        }
-    }
- };
+    const applySettings = () => {
+        // Bio Glow
+        document.body.classList.toggle('bio-glow-active', state.bioGlow);
+        glowBtn.innerText = state.bioGlow ? 'ON' : 'OFF';
+        if (pointLight) pointLight.color.setHex(state.bioGlow ? 0x74c69d : 0xe9c46a);
 
- // Initialize saved state
- loadSettings();
-
- // --- NOTIFICATION FLUSH ---
- setTimeout(() => document.getElementById('notif-link')?.classList.remove('flush-active'), 60000);
-
- // --- NAVIGATION LOGIC ---
- const toggleSidebar = () => { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); };
- menuBtn.onclick = toggleSidebar;
- overlay.onclick = toggleSidebar;
-
- settingsParent.onclick = () => settingsSub.classList.toggle('active');
-
- modeBtn.onclick = () => {
-    document.body.classList.toggle('light-mode');
-    modeBtn.innerText = document.body.classList.contains('light-mode') ? 'OFF' : 'ON';
-    saveSettings();
- };
-
- fullBtn.onclick = () => {
-    app.classList.toggle('full');
-    hdr.classList.toggle('hidden');
-    fullBtn.innerText = app.classList.contains('full') ? 'ON' : 'OFF';
-    saveSettings();
- };
-
- document.querySelectorAll('.nav-item[data-src]').forEach(link => {
-    link.onclick = (e) => {
-        e.preventDefault();
-        frame.style.opacity = '0';
-        setTimeout(() => {
-            frame.src = link.getAttribute('data-src');
-            frame.style.opacity = '1';
-            toggleSidebar();
-        }, 400);
+        // Full Mode
+        app.classList.toggle('full', state.fullMode);
+        hdr.classList.toggle('hidden', state.fullMode);
+        fullBtn.innerText = state.fullMode ? 'ON' : 'OFF';
     };
- });
 
- // --- 3D BACKGROUND ---
- let scene, camera, renderer, waterMesh, clock;
- const init3D = () => {
-    scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 1000);
-    renderer = new THREE.WebGLRenderer({canvas: document.getElementById('water-canvas'), antialias: true});
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    const geo = new THREE.PlaneGeometry(35, 35, 50, 50);
-    const mat = new THREE.MeshStandardMaterial({ color: 0x14213d, roughness: 0.1, metalness: 0.5, transparent: true, opacity: 0.8 });
-    waterMesh = new THREE.Mesh(geo, mat);
-    waterMesh.rotation.x = -Math.PI / 2.2;
-    scene.add(waterMesh);
-    scene.add(new THREE.PointLight(0xffffff, 1.5).set(5, 10, 5));
-    scene.add(new THREE.AmbientLight(0xffffff, 0.2));
-    camera.position.z = 6; camera.position.y = 2;
-    clock = new THREE.Clock();
-    animate();
- };
- const animate = () => {
-    requestAnimationFrame(animate);
-    const t = clock.getElapsedTime();
-    const pos = waterMesh.geometry.attributes.position.array;
-    for(let i=0; i<pos.length; i+=3) {
-        pos[i+2] = Math.sin(pos[i]*0.5 + t*0.8) * 0.2 + Math.cos(pos[i+1]*0.5 + t*0.8) * 0.2;
-    }
-    waterMesh.geometry.attributes.position.needsUpdate = true;
-    renderer.render(scene, camera);
- };
+    // --- Navigation Logic ---
+    const toggleSidebar = () => { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); };
+    document.getElementById('menuBtn').onclick = toggleSidebar;
+    overlay.onclick = toggleSidebar;
+    document.getElementById('setToggle').onclick = () => document.getElementById('setSub').classList.toggle('active');
 
- btn.onclick = () => { 
-    app.classList.toggle('full'); 
-    hdr.classList.toggle('hidden');
-    fullBtn.innerText = app.classList.contains('full') ? 'ON' : 'OFF';
-    saveSettings();
- };
+    glowBtn.onclick = () => { 
+        state.bioGlow = !state.bioGlow; 
+        localStorage.setItem('serenity_bio', state.bioGlow); 
+        applySettings(); 
+    };
 
- init3D();
+    const toggleFull = () => {
+        state.fullMode = !state.fullMode;
+        localStorage.setItem('serenity_full', state.fullMode);
+        applySettings();
+    };
+    fullBtn.onclick = toggleFull;
+    document.getElementById('fabBtn').onclick = toggleFull;
+
+    document.querySelectorAll('.nav-item[data-src]').forEach(item => {
+        item.onclick = () => {
+            frame.style.opacity = '0';
+            setTimeout(() => {
+                frame.src = item.getAttribute('data-src');
+                frame.style.opacity = '1';
+                toggleSidebar();
+            }, 400);
+        };
+    });
+
+    // --- THREE.js Engine ---
+    let scene, camera, renderer, waterMesh, pointLight, clock;
+    const init3D = () => {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+        renderer = new THREE.WebGLRenderer({canvas: document.getElementById('water-canvas'), antialias: true});
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        const geo = new THREE.PlaneGeometry(60, 60, 40, 40);
+        const mat = new THREE.MeshStandardMaterial({ 
+            color: 0x050f0f, roughness: 0.1, metalness: 0.6, transparent: true, opacity: 0.85 
+        });
+
+        waterMesh = new THREE.Mesh(geo, mat);
+        waterMesh.rotation.x = -Math.PI / 2.2;
+        scene.add(waterMesh);
+
+        pointLight = new THREE.PointLight(0xe9c46a, 2);
+        pointLight.position.set(10, 20, 10);
+        scene.add(pointLight, new THREE.AmbientLight(0xffffff, 0.2));
+
+        camera.position.set(0, 5, 15);
+        clock = new THREE.Clock();
+        animate();
+        applySettings(); // Initial theme sync
+    };
+
+    const animate = () => {
+        requestAnimationFrame(animate);
+        const t = clock.getElapsedTime() * 0.5;
+        const pos = waterMesh.geometry.attributes.position;
+        for(let i=0; i<pos.count; i++) {
+            const x = pos.getX(i), y = pos.getY(i);
+            const z = Math.sin(x*0.3 + t) * 0.4 + Math.cos(y*0.3 + t) * 0.4;
+            pos.setZ(i, z);
+        }
+        pos.needsUpdate = true;
+        renderer.render(scene, camera);
+    };
+
+    // --- Interaction ---
+    window.addEventListener('pointerdown', (e) => {
+        if(e.target.tagName === 'IFRAME') return;
+        const r = document.createElement('div');
+        r.className = 'ripple'; r.style.left = e.clientX+'px'; r.style.top = e.clientY+'px';
+        document.body.appendChild(r);
+        setTimeout(() => r.remove(), 1600);
+    });
+
+    window.onresize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+
+    init3D();
 })();
 </script>
-
 </body>
 </html>
