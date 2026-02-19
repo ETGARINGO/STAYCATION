@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fresh Sounds | Zen Full View</title>
+    <title>Fresh Sounds | Zen Experience</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         :root {
             --nature-glow: #a7c957; 
-            --nature-bg: #020808;   
+            --nature-bg: #010a0a;   
             --safe-top: env(safe-area-inset-top, 20px);
             --safe-bottom: env(safe-area-inset-bottom, 20px);
         }
@@ -24,105 +24,107 @@
 
         /* --- HUD ELEMENTS --- */
         .hud {
-            position: fixed;
-            z-index: 10;
-            width: 100%;
-            transition: opacity 0.8s ease, transform 0.8s ease;
-            pointer-events: none;
-        }
-
-        header {
-            top: 0;
+            position: fixed; z-index: 10; width: 100%; top: 0;
             padding-top: var(--safe-top);
             text-align: center;
-            background: linear-gradient(to bottom, rgba(2,8,8,0.9), transparent);
-            padding-bottom: 40px;
+            background: linear-gradient(to bottom, rgba(1,10,10,0.95), transparent);
+            padding-bottom: 50px;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
         }
 
         h1 { 
             color: #f0fdfa; margin: 0; font-weight: 200; 
-            letter-spacing: 14px; font-size: 0.9rem;
+            letter-spacing: 16px; font-size: 0.85rem;
             text-transform: uppercase;
-            text-shadow: 0 0 20px rgba(167, 201, 87, 0.6);
+            text-shadow: 0 0 20px var(--nature-glow);
         }
 
-        /* --- MAIN CONTENT --- */
+        /* --- IFRAME CONTENT --- */
         .content-container {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 5;
-            display: flex;
-            flex-direction: column;
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; z-index: 5;
+            display: flex; flex-direction: column;
         }
 
         iframe {
-            flex: 1;
-            width: 100%;
-            height: 100%;
-            border: none;
-            background: transparent;
-            /* Allow interactions with the script content */
-            pointer-events: auto; 
+            flex: 1; width: 100%; height: 100%; border: none;
+            background: transparent; pointer-events: auto;
         }
 
-        /* --- UI CONTROLS --- */
+        /* --- UPGRADED LIQUID CONTROLS --- */
         .controls {
-            position: fixed;
-            bottom: calc(var(--safe-bottom) + 20px);
-            right: 20px;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            position: fixed; bottom: calc(var(--safe-bottom) + 20px);
+            right: 20px; z-index: 100;
+            display: flex; flex-direction: column-reverse;
+            gap: 15px; align-items: center;
         }
 
-        .btn-circle {
-            width: 45px; height: 45px; border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(167, 201, 87, 0.3);
+        .fab-main {
+            width: 56px; height: 56px; border-radius: 50%;
+            background: rgba(167, 201, 87, 0.1);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(167, 201, 87, 0.4);
             color: var(--nature-glow);
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; pointer-events: auto;
-            transition: 0.3s;
+            box-shadow: 0 0 20px rgba(0,0,0,0.4);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: breathe 4s infinite ease-in-out;
         }
 
-        .btn-circle:active { transform: scale(0.9); background: rgba(167, 201, 87, 0.2); }
+        .sub-btn {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white; display: flex; align-items: center; justify-content: center;
+            opacity: 0; transform: translateY(20px) scale(0);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: auto;
+        }
 
-        /* Hide UI State */
-        .zen-mode .hud { opacity: 0; transform: translateY(-20px); }
+        .controls:hover .sub-btn, .controls:active .sub-btn {
+            opacity: 1; transform: translateY(0) scale(1);
+        }
+
+        /* --- STATES --- */
+        .zen-mode .hud { opacity: 0; transform: translateY(-30px); }
+        .zen-mode .fab-main { filter: hue-rotate(140deg); transform: rotate(180deg); }
+
+        @keyframes breathe {
+            0%, 100% { box-shadow: 0 0 10px rgba(167, 201, 87, 0.2); }
+            50% { box-shadow: 0 0 25px rgba(167, 201, 87, 0.5); }
+        }
 
         .ripple {
             position: fixed; width: 2px; height: 2px;
-            background: var(--nature-glow);
-            border-radius: 50%; pointer-events: none;
-            z-index: 9999; animation: rip 1.8s cubic-bezier(0.2, 0.5, 0.2, 1) forwards;
+            background: var(--nature-glow); border-radius: 50%;
+            pointer-events: none; z-index: 9999;
+            animation: rip 1.8s cubic-bezier(0.2, 0.5, 0.2, 1) forwards;
         }
         @keyframes rip {
             0% { transform: translate(-50%,-50%) scale(0); opacity: 0.8; }
-            100% { transform: translate(-50%,-50%) scale(150); opacity: 0; }
+            100% { transform: translate(-50%,-50%) scale(160); opacity: 0; }
         }
     </style>
 </head>
-<body>
+<body id="app-body">
 
 <canvas id="water-canvas"></canvas>
 
-<div class="hud" id="header-hud">
-    <header>
-        <h1>Breathe</h1>
-    </header>
+<div class="hud">
+    <header><h1>Breathe</h1></header>
 </div>
 
 <div class="content-container">
     <iframe src="https://script.google.com/macros/s/AKfycbyietleASiwmbndmoMrjF18Kv3HHH9kGbwVNJmOW0pCTPmwBt0BItHVtxFylFdnSatyNA/exec"></iframe>
 </div>
 
-<div class="controls">
-    <div class="btn-circle" onclick="toggleFullscreen()">⛶</div>
-    <div class="btn-circle" onclick="toggleZen()">👁</div>
+<div class="controls" id="fab-trigger">
+    <div class="fab-main" onclick="toggleZen()">👁</div>
+    <div class="sub-btn" onclick="toggleFullscreen()">⛶</div>
+    <div class="sub-btn" onclick="location.reload()">⟳</div>
 </div>
 
 <script>
@@ -132,69 +134,54 @@
     const init = () => {
         clock = new THREE.Clock();
         scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x020808, 0.05);
+        scene.fog = new THREE.FogExp2(0x010a0a, 0.06);
         
         camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         
-        renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('water-canvas'), antialias: true });
+        renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('water-canvas'), antialias: true, alpha: true });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.setSize(window.innerWidth, window.innerHeight);
 
-        // --- ENHANCED WATER ---
-        const geometry = new THREE.PlaneGeometry(100, 100, 60, 60);
+        const geometry = new THREE.PlaneGeometry(100, 100, 50, 50);
         const material = new THREE.MeshStandardMaterial({
-            color: 0x081a1a, 
-            roughness: 0.2,
-            metalness: 0.3,
-            transparent: true,
-            opacity: 0.95
+            color: 0x0a1a1a, roughness: 0.15, metalness: 0.4, transparent: true, opacity: 0.9
         });
 
         waterMesh = new THREE.Mesh(geometry, material);
         waterMesh.rotation.x = -Math.PI / 2.5;
         scene.add(waterMesh);
 
-        // --- ADDED MIST PARTICLES ---
-        const partGeo = new THREE.BufferGeometry();
-        const partCount = 500;
-        const posArr = new Float32Array(partCount * 3);
-        for(let i=0; i<partCount * 3; i++) {
-            posArr[i] = (Math.random() - 0.5) * 60;
-        }
-        partGeo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
-        const partMat = new THREE.PointsMaterial({ size: 0.05, color: 0xa7c957, transparent: true, opacity: 0.4 });
-        particles = new THREE.Points(partGeo, partMat);
+        // Particle Mist
+        const pGeo = new THREE.BufferGeometry();
+        const pCount = 400;
+        const pPos = new Float32Array(pCount * 3);
+        for(let i=0; i<pCount*3; i++) pPos[i] = (Math.random()-0.5)*70;
+        pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+        particles = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.06, color: 0xa7c957, transparent: true, opacity: 0.3 }));
         scene.add(particles);
 
-        const light = new THREE.PointLight(0xa7c957, 1.5);
+        const light = new THREE.PointLight(0xa7c957, 1.8);
         light.position.set(10, 20, 10);
-        scene.add(light, new THREE.AmbientLight(0x020808, 0.8));
+        scene.add(light, new THREE.AmbientLight(0x010a0a, 0.9));
 
-        camera.position.set(0, 5, 18);
+        camera.position.set(0, 5, 20);
         animate();
     };
 
     const animate = () => {
         requestAnimationFrame(animate);
         const t = clock.getElapsedTime();
-        
-        // Water Movement
         const pos = waterMesh.geometry.attributes.position;
         for (let i = 0; i < pos.count; i++) {
             const x = pos.getX(i), y = pos.getY(i);
-            const z = Math.sin(x * 0.2 + t * 0.5) * 0.4 + Math.cos(y * 0.2 + t * 0.4) * 0.4;
+            const z = Math.sin(x * 0.2 + t * 0.4) * 0.4 + Math.cos(y * 0.2 + t * 0.3) * 0.4;
             pos.setZ(i, z);
         }
         pos.needsUpdate = true;
-
-        // Particle Drift
-        particles.rotation.y = t * 0.02;
-        particles.position.y = Math.sin(t * 0.2) * 0.5;
-
+        particles.rotation.y = t * 0.01;
         renderer.render(scene, camera);
     };
 
-    // Interaction
     window.addEventListener('pointerdown', (e) => {
         if(e.target.tagName === 'IFRAME' || e.target.closest('.controls')) return;
         const r = document.createElement('div');
@@ -213,4 +200,13 @@
 })();
 
 function toggleFullscreen() {
-    if (!document.fullscreenElement) document.documentElement.request
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+}
+
+function toggleZen() {
+    document.getElementById('app-body').classList.toggle('zen-mode');
+}
+</script>
+</body>
+</html>
