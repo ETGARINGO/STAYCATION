@@ -1,273 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fresh Sounds | Serenity</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        :root {
+            --glow-color: #48cae4;
+            --bg-dark: #051918;
+            --glass: rgba(255, 255, 255, 0.1);
+        }
 
-<title>Serenity | Adaptive Edge</title>
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; font-family: 'Segoe UI', sans-serif;
+            background: var(--bg-dark);
+        }
 
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500&family=Baskervville&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        /* --- 3D CANVAS LAYER --- */
+        #water-canvas {
+            position: fixed; top: 0; left: 0; z-index: 1;
+        }
 
-<style>
-:root{
- --ocean:#2a9d8f;
- --foam:rgba(255,255,255,.94);
- --safe-top:env(safe-area-inset-top);
- --safe-bottom:env(safe-area-inset-bottom);
-}
+        /* --- UI OVERLAY --- */
+        .ui-container {
+            position: relative; z-index: 10;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            height: 100vh; pointer-events: none;
+        }
 
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overscroll-behavior:none;background:#051918;}
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 24px;
+            padding: 2rem;
+            pointer-events: auto;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
 
-body{
- font-family:Outfit,sans-serif;
- display:flex;
- flex-direction:column;
- overflow:hidden;
-}
+        .glass-card:hover { transform: scale(1.02); }
 
-#water-canvas {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    z-index: 1;
-}
+        h1 { color: white; margin: 0; font-weight: 300; letter-spacing: 4px; }
+        
+        iframe {
+            width: 300px; height: 150px; border: none;
+            border-radius: 12px; margin-top: 20px;
+        }
 
-/* --- MINIMAL HEADER --- */
-header{
- position: relative;
- padding: calc(20px + var(--safe-top)) 16px 10px;
- text-align:center;
- transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
- z-index: 10;
-}
-header.hidden{
-    transform: translateY(-40px);
-    opacity: 0;
-    pointer-events: none;
-    margin-bottom: -60px;
-}
-h1{
-    font-family:Baskervville;
-    font-size:1.8rem;
-    color:#fff;
-    letter-spacing: 1px;
-}
-.subtitle{
-    font-size:.6rem;
-    letter-spacing:5px;
-    color:var(--ocean);
-    text-transform: uppercase;
-    margin-bottom: 2px;
-}
+        /* --- FLOATING ACTION BUTTON --- */
+        .fab {
+            position: fixed; bottom: 30px; right: 30px;
+            width: 56px; height: 56px; border-radius: 50%;
+            background: var(--glow-color);
+            box-shadow: 0 0 20px var(--glow-color);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 999; transition: 0.3s;
+            pointer-events: auto; font-size: 24px;
+        }
 
-.app{
- flex:1;
- position: relative;
- padding:0 12px calc(85px + var(--safe-bottom));
- transition: .7s cubic-bezier(0.16, 1, 0.3, 1);
- z-index: 20;
-}
-.app.full{padding:0; margin-bottom: 0;}
+        /* --- RIPPLE SYSTEM --- */
+        .ripple {
+            position: fixed; width: 2px; height: 2px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 50%; pointer-events: none;
+            z-index: 9999; animation: rip 1.2s ease-out forwards;
+        }
 
-/* --- ADAPTIVE GLOW WRAPPER --- */
-.card-wrapper {
-    position: relative;
-    height: 100%;
-    width: 100%;
-    border-radius: 30px;
-    padding: 2.5px; /* The Border width */
-    background: rgba(255,255,255,0.05);
-    overflow: hidden;
-    transition: border-radius .6s ease;
-}
-.app.full .card-wrapper { border-radius: 0; padding: 0; }
-
-.card-wrapper::before {
-    content: '';
-    position: absolute;
-    top: -50%; left: -50%;
-    width: 200%; height: 200%;
-    /* Adaptive color gradient - handled by JS */
-    background: conic-gradient(transparent, transparent, transparent, var(--glow-color, #48cae4));
-    animation: rotate 5s linear infinite;
-    z-index: 1;
-}
-
-@keyframes rotate { 100% { transform: rotate(360deg); } }
-
-.card{
- position: relative;
- height:100%;
- width: 100%;
- border-radius:28px;
- background:var(--foam);
- backdrop-filter:blur(30px);
- -webkit-backdrop-filter:blur(30px);
- overflow:hidden;
- z-index: 2;
- transition: border-radius .6s ease;
-}
-.app.full .card { border-radius:0; }
-
-iframe{width:100%; height:100%; border:none; background: transparent;}
-
-/* FAB */
-.fab{
- position:fixed;
- right:25px;
- bottom:calc(25px + var(--safe-bottom));
- width:54px;height:54px;
- border-radius:50%;
- border:none;
- background:var(--ocean);
- color:#fff;
- display:flex;
- align-items:center;
- justify-content:center;
- box-shadow:0 8px 20px rgba(0,0,0,0.4);
- z-index:999;
- font-size: 20px;
- transition: 0.3s;
-}
-.app.full + .fab { opacity: 0.4; transform: scale(0.85); }
-
-.ripple{
- position:fixed;
- width:10px; height:10px;
- background: rgba(255,255,255,0.2);
- border: 1px solid rgba(255,255,255,0.4);
- border-radius:50%;
- transform:translate(-50%,-50%) scale(0);
- animation:rip 1s ease-out forwards;
- pointer-events:none;
- z-index:9999;
-}
-@keyframes rip{to{transform:translate(-50%,-50%) scale(35);opacity:0}}
-</style>
+        @keyframes rip {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(100); opacity: 0; }
+        }
+    </style>
 </head>
-
 <body>
 
 <canvas id="water-canvas"></canvas>
 
-<audio id="ocean" loop>
- <source src="https://assets.mixkit.co/active_storage/sfx/2513/2513-preview.mp3">
-</audio>
+<div class="ui-container">
+    <div class="glass-card">
+        <h1>BREATHE</h1>
+        <p style="color: rgba(255,255,255,0.7)">Fresh Sounds Experience</p>
+        <iframe src="https://script.google.com/macros/s/AKfycbzpWGftLEvd2VMKDqRa466aKEW2Pt9qob9pvXzyx_ASm0Gmrsn-FjZTeMXD7LjMkvsuoQ/exec"></iframe>
+    </div>
+</div>
 
-<header id="hdr">
- <p class="subtitle">Breathe</p>
- <h1>Serenity</h1>
-</header>
-
-<section class="app" id="app">
- <div class="card-wrapper" id="glow-wrap">
-  <div class="card">
-   <iframe id="frame" src="https://script.google.com/macros/s/AKfycbzpWGftLEvd2VMKDqRa466aKEW2Pt9qob9pvXzyx_ASm0Gmrsn-FjZTeMXD7LjMkvsuoQ/exec"></iframe>
-  </div>
- </div>
-</section>
-
-<button class="fab" id="btn">⛶</button>
+<div class="fab" onclick="toggleFullscreen()">⛶</div>
 
 <script>
 (() => {
- // --- ADAPTIVE COLORS BASED ON TIME ---
- const updateTheme = () => {
-    const hour = new Date().getHours();
-    let glow, water;
+    let scene, camera, renderer, waterMesh, clock;
     
-    if (hour >= 5 && hour < 9) { // Sunrise
-        glow = "#ffd166"; water = 0x2a9d8f;
-    } else if (hour >= 9 && hour < 17) { // Day
-        glow = "#48cae4"; water = 0x1d7a70;
-    } else if (hour >= 17 && hour < 20) { // Sunset
-        glow = "#f4a261"; water = 0x264653;
-    } else { // Night
-        glow = "#a2d2ff"; water = 0x051918;
-    }
-    document.documentElement.style.setProperty('--glow-color', glow);
-    return water;
- };
+    // --- THEME ENGINE ---
+    const getTheme = () => {
+        const hour = new Date().getHours();
+        if (hour >= 5 && hour < 9) return { glow: "#ffd166", water: 0x2a9d8f }; // Sunrise
+        if (hour >= 9 && hour < 17) return { glow: "#48cae4", water: 0x1d7a70 }; // Day
+        if (hour >= 17 && hour < 20) return { glow: "#f4a261", water: 0x264653 }; // Sunset
+        return { glow: "#a2d2ff", water: 0x051918 }; // Night
+    };
 
- // --- 3D ENGINE ---
- let scene, camera, renderer, waterMesh, clock;
- const init3D = () => {
-    scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
-    renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('water-canvas'), antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    
-    const geometry = new THREE.PlaneGeometry(30, 30, 40, 40);
-    const material = new THREE.MeshStandardMaterial({
-        color: updateTheme(),
-        roughness: 0.15,
-        metalness: 0.4,
-        transparent: true, opacity: 0.8
+    // --- 3D INITIALIZATION ---
+    const init = () => {
+        clock = new THREE.Clock();
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        
+        renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('water-canvas'), antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        const theme = getTheme();
+        document.documentElement.style.setProperty('--glow-color', theme.glow);
+
+        const geometry = new THREE.PlaneGeometry(50, 50, 64, 64);
+        const material = new THREE.MeshStandardMaterial({
+            color: theme.water,
+            roughness: 0.1,
+            metalness: 0.5,
+            wireframe: false
+        });
+
+        waterMesh = new THREE.Mesh(geometry, material);
+        waterMesh.rotation.x = -Math.PI / 2.5;
+        scene.add(waterMesh);
+
+        const light = new THREE.PointLight(0xffffff, 1);
+        light.position.set(5, 10, 5);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+
+        camera.position.set(0, 3, 10);
+        animate();
+    };
+
+    // --- WAVE ANIMATION ---
+    const animate = () => {
+        requestAnimationFrame(animate);
+        const time = clock.getElapsedTime();
+        const pos = waterMesh.geometry.attributes.position;
+        
+        for (let i = 0; i < pos.count; i++) {
+            const x = pos.getX(i);
+            const y = pos.getY(i);
+            const z = Math.sin(x * 0.3 + time) * 0.5 + Math.cos(y * 0.3 + time) * 0.5;
+            pos.setZ(i, z);
+        }
+        pos.needsUpdate = true;
+        renderer.render(scene, camera);
+    };
+
+    // --- RIPPLE SYSTEM ---
+    window.addEventListener('mousedown', (e) => {
+        const rip = document.createElement('div');
+        rip.className = 'ripple';
+        rip.style.left = `${e.clientX}px`;
+        rip.style.top = `${e.clientY}px`;
+        document.body.appendChild(rip);
+        setTimeout(() => rip.remove(), 1200);
     });
 
-    waterMesh = new THREE.Mesh(geometry, material);
-    waterMesh.rotation.x = -Math.PI / 2.2;
-    scene.add(waterMesh);
-    scene.add(new THREE.PointLight(0xffffff, 1.2).set(5, 10, 5));
-    scene.add(new THREE.AmbientLight(0x2a9d8f, 0.4));
+    // --- RESPONSIVE RESIZE ---
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
 
-    camera.position.z = 6;
-    camera.position.y = 2;
-    clock = new THREE.Clock();
-    animate();
- };
-
- const animate = () => {
-    requestAnimationFrame(animate);
-    const time = clock.getElapsedTime();
-    const pos = waterMesh.geometry.attributes.position.array;
-    for (let i = 0; i < pos.length; i += 3) {
-        pos[i + 2] = Math.sin(pos[i] * 0.6 + time) * 0.2 + Math.cos(pos[i+1] * 0.6 + time) * 0.2;
-    }
-    waterMesh.geometry.attributes.position.needsUpdate = true;
-    renderer.render(scene, camera);
- };
-
- // --- UI & GESTURES ---
- const app = document.getElementById('app'), hdr = document.getElementById('hdr'), btn = document.getElementById('btn'), audio = document.getElementById('ocean');
- let started=false, startY=0;
-
- const startExp = (e) => {
-  if(!started) { audio.volume=.2; audio.play().catch(()=>{}); started=true; }
-  const r=document.createElement('div');
-  r.className='ripple';
-  r.style.left=(e.clientX || (e.touches ? e.touches[0].clientX : 0))+'px';
-  r.style.top=(e.clientY || (e.touches ? e.touches[0].clientY : 0))+'px';
-  document.body.appendChild(r);
-  r.onanimationend=()=>r.remove();
- };
-
- document.addEventListener('pointerdown', startExp, {passive:true});
-
- btn.onclick=e=>{
-  e.stopPropagation();
-  app.classList.toggle('full');
-  hdr.classList.toggle('hidden');
- };
-
- document.addEventListener('touchstart',e=>{ startY=e.touches[0].clientY; },{passive:true});
- document.addEventListener('touchend',e=>{
-  const diff=startY-e.changedTouches[0].clientY;
-  if(diff>60){ app.classList.add('full'); hdr.classList.add('hidden'); }
-  if(diff<-60){ app.classList.remove('full'); hdr.classList.remove('hidden'); }
- },{passive:true});
-
- window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
- });
-
- init3D();
+    init();
 })();
-</script>
 
+function toggleFullscreen() {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+}
+</script>
 </body>
 </html>
