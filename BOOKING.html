@@ -2,77 +2,107 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fresh Sounds | Serenity</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Fresh Sounds | Zen Full View</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         :root {
-            --glow-color: #48cae4;
-            --bg-dark: #051918;
-            --glass: rgba(255, 255, 255, 0.1);
+            --nature-glow: #a7c957; 
+            --nature-bg: #020808;   
+            --safe-top: env(safe-area-inset-top, 20px);
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
         }
 
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
-            overflow: hidden; font-family: 'Segoe UI', sans-serif;
-            background: var(--bg-dark);
+            overflow: hidden; font-family: -apple-system, system-ui, sans-serif;
+            background: var(--nature-bg);
+            touch-action: none;
         }
 
-        /* --- 3D CANVAS LAYER --- */
-        #water-canvas {
-            position: fixed; top: 0; left: 0; z-index: 1;
+        #water-canvas { position: fixed; top: 0; left: 0; z-index: 1; }
+
+        /* --- HUD ELEMENTS --- */
+        .hud {
+            position: fixed;
+            z-index: 10;
+            width: 100%;
+            transition: opacity 0.8s ease, transform 0.8s ease;
+            pointer-events: none;
         }
 
-        /* --- UI OVERLAY --- */
-        .ui-container {
-            position: relative; z-index: 10;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            height: 100vh; pointer-events: none;
-        }
-
-        .glass-card {
-            background: var(--glass);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 24px;
-            padding: 2rem;
-            pointer-events: auto;
+        header {
+            top: 0;
+            padding-top: var(--safe-top);
             text-align: center;
-            transition: transform 0.3s ease;
+            background: linear-gradient(to bottom, rgba(2,8,8,0.9), transparent);
+            padding-bottom: 40px;
         }
 
-        .glass-card:hover { transform: scale(1.02); }
+        h1 { 
+            color: #f0fdfa; margin: 0; font-weight: 200; 
+            letter-spacing: 14px; font-size: 0.9rem;
+            text-transform: uppercase;
+            text-shadow: 0 0 20px rgba(167, 201, 87, 0.6);
+        }
 
-        h1 { color: white; margin: 0; font-weight: 300; letter-spacing: 4px; }
-        
+        /* --- MAIN CONTENT --- */
+        .content-container {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+        }
+
         iframe {
-            width: 300px; height: 150px; border: none;
-            border-radius: 12px; margin-top: 20px;
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+            /* Allow interactions with the script content */
+            pointer-events: auto; 
         }
 
-        /* --- FLOATING ACTION BUTTON --- */
-        .fab {
-            position: fixed; bottom: 30px; right: 30px;
-            width: 56px; height: 56px; border-radius: 50%;
-            background: var(--glow-color);
-            box-shadow: 0 0 20px var(--glow-color);
+        /* --- UI CONTROLS --- */
+        .controls {
+            position: fixed;
+            bottom: calc(var(--safe-bottom) + 20px);
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn-circle {
+            width: 45px; height: 45px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(167, 201, 87, 0.3);
+            color: var(--nature-glow);
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; z-index: 999; transition: 0.3s;
-            pointer-events: auto; font-size: 24px;
+            cursor: pointer; pointer-events: auto;
+            transition: 0.3s;
         }
 
-        /* --- RIPPLE SYSTEM --- */
+        .btn-circle:active { transform: scale(0.9); background: rgba(167, 201, 87, 0.2); }
+
+        /* Hide UI State */
+        .zen-mode .hud { opacity: 0; transform: translateY(-20px); }
+
         .ripple {
             position: fixed; width: 2px; height: 2px;
-            background: rgba(255,255,255,0.4);
+            background: var(--nature-glow);
             border-radius: 50%; pointer-events: none;
-            z-index: 9999; animation: rip 1.2s ease-out forwards;
+            z-index: 9999; animation: rip 1.8s cubic-bezier(0.2, 0.5, 0.2, 1) forwards;
         }
-
         @keyframes rip {
-            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(100); opacity: 0; }
+            0% { transform: translate(-50%,-50%) scale(0); opacity: 0.8; }
+            100% { transform: translate(-50%,-50%) scale(150); opacity: 0; }
         }
     </style>
 </head>
@@ -80,90 +110,99 @@
 
 <canvas id="water-canvas"></canvas>
 
-<div class="ui-container">
-    <div class="glass-card">
-        <h1>BREATHE</h1>
-        <p style="color: rgba(255,255,255,0.7)">Fresh Sounds Experience</p>
-        <iframe src="https://script.google.com/macros/s/AKfycbzpWGftLEvd2VMKDqRa466aKEW2Pt9qob9pvXzyx_ASm0Gmrsn-FjZTeMXD7LjMkvsuoQ/exec"></iframe>
-    </div>
+<div class="hud" id="header-hud">
+    <header>
+        <h1>Breathe</h1>
+    </header>
 </div>
 
-<div class="fab" onclick="toggleFullscreen()">⛶</div>
+<div class="content-container">
+    <iframe src="https://script.google.com/macros/s/AKfycbyietleASiwmbndmoMrjF18Kv3HHH9kGbwVNJmOW0pCTPmwBt0BItHVtxFylFdnSatyNA/exec"></iframe>
+</div>
+
+<div class="controls">
+    <div class="btn-circle" onclick="toggleFullscreen()">⛶</div>
+    <div class="btn-circle" onclick="toggleZen()">👁</div>
+</div>
 
 <script>
 (() => {
-    let scene, camera, renderer, waterMesh, clock;
+    let scene, camera, renderer, waterMesh, particles, clock;
     
-    // --- THEME ENGINE ---
-    const getTheme = () => {
-        const hour = new Date().getHours();
-        if (hour >= 5 && hour < 9) return { glow: "#ffd166", water: 0x2a9d8f }; // Sunrise
-        if (hour >= 9 && hour < 17) return { glow: "#48cae4", water: 0x1d7a70 }; // Day
-        if (hour >= 17 && hour < 20) return { glow: "#f4a261", water: 0x264653 }; // Sunset
-        return { glow: "#a2d2ff", water: 0x051918 }; // Night
-    };
-
-    // --- 3D INITIALIZATION ---
     const init = () => {
         clock = new THREE.Clock();
         scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        scene.fog = new THREE.FogExp2(0x020808, 0.05);
+        
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         
         renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('water-canvas'), antialias: true });
-        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.setSize(window.innerWidth, window.innerHeight);
 
-        const theme = getTheme();
-        document.documentElement.style.setProperty('--glow-color', theme.glow);
-
-        const geometry = new THREE.PlaneGeometry(50, 50, 64, 64);
+        // --- ENHANCED WATER ---
+        const geometry = new THREE.PlaneGeometry(100, 100, 60, 60);
         const material = new THREE.MeshStandardMaterial({
-            color: theme.water,
-            roughness: 0.1,
-            metalness: 0.5,
-            wireframe: false
+            color: 0x081a1a, 
+            roughness: 0.2,
+            metalness: 0.3,
+            transparent: true,
+            opacity: 0.95
         });
 
         waterMesh = new THREE.Mesh(geometry, material);
         waterMesh.rotation.x = -Math.PI / 2.5;
         scene.add(waterMesh);
 
-        const light = new THREE.PointLight(0xffffff, 1);
-        light.position.set(5, 10, 5);
-        scene.add(light);
-        scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+        // --- ADDED MIST PARTICLES ---
+        const partGeo = new THREE.BufferGeometry();
+        const partCount = 500;
+        const posArr = new Float32Array(partCount * 3);
+        for(let i=0; i<partCount * 3; i++) {
+            posArr[i] = (Math.random() - 0.5) * 60;
+        }
+        partGeo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+        const partMat = new THREE.PointsMaterial({ size: 0.05, color: 0xa7c957, transparent: true, opacity: 0.4 });
+        particles = new THREE.Points(partGeo, partMat);
+        scene.add(particles);
 
-        camera.position.set(0, 3, 10);
+        const light = new THREE.PointLight(0xa7c957, 1.5);
+        light.position.set(10, 20, 10);
+        scene.add(light, new THREE.AmbientLight(0x020808, 0.8));
+
+        camera.position.set(0, 5, 18);
         animate();
     };
 
-    // --- WAVE ANIMATION ---
     const animate = () => {
         requestAnimationFrame(animate);
-        const time = clock.getElapsedTime();
-        const pos = waterMesh.geometry.attributes.position;
+        const t = clock.getElapsedTime();
         
+        // Water Movement
+        const pos = waterMesh.geometry.attributes.position;
         for (let i = 0; i < pos.count; i++) {
-            const x = pos.getX(i);
-            const y = pos.getY(i);
-            const z = Math.sin(x * 0.3 + time) * 0.5 + Math.cos(y * 0.3 + time) * 0.5;
+            const x = pos.getX(i), y = pos.getY(i);
+            const z = Math.sin(x * 0.2 + t * 0.5) * 0.4 + Math.cos(y * 0.2 + t * 0.4) * 0.4;
             pos.setZ(i, z);
         }
         pos.needsUpdate = true;
+
+        // Particle Drift
+        particles.rotation.y = t * 0.02;
+        particles.position.y = Math.sin(t * 0.2) * 0.5;
+
         renderer.render(scene, camera);
     };
 
-    // --- RIPPLE SYSTEM ---
-    window.addEventListener('mousedown', (e) => {
-        const rip = document.createElement('div');
-        rip.className = 'ripple';
-        rip.style.left = `${e.clientX}px`;
-        rip.style.top = `${e.clientY}px`;
-        document.body.appendChild(rip);
-        setTimeout(() => rip.remove(), 1200);
+    // Interaction
+    window.addEventListener('pointerdown', (e) => {
+        if(e.target.tagName === 'IFRAME' || e.target.closest('.controls')) return;
+        const r = document.createElement('div');
+        r.className = 'ripple'; r.style.left = e.clientX+'px'; r.style.top = e.clientY+'px';
+        document.body.appendChild(r);
+        setTimeout(() => r.remove(), 1800);
     });
 
-    // --- RESPONSIVE RESIZE ---
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
@@ -174,9 +213,4 @@
 })();
 
 function toggleFullscreen() {
-    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-    else document.exitFullscreen();
-}
-</script>
-</body>
-</html>
+    if (!document.fullscreenElement) document.documentElement.request
