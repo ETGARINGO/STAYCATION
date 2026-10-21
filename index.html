@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Serenity Client Portal</title>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Baskervville:ital@0;1&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent-gold: #e9c46a;
+            --accent-mint: #74c69d;
+            --accent-cyan: #4ea8de;
+            --accent-rose: #f4a261;
+            --accent: var(--accent-gold);
+            
+            --bg-deep: #05080a;
+            --surface-glass: rgba(12, 18, 24, 0.82);
+            --header-bg: rgba(5, 8, 10, 0.85);
+            
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-left: env(safe-area-inset-left, 0px);
+            --safe-right: env(safe-area-inset-right, 0px);
+        }
+
+        /* Color Theme Overrides */
+        body.theme-mint { --accent: var(--accent-mint); }
+        body.theme-cyan { --accent: var(--accent-cyan); }
+        body.theme-rose { --accent: var(--accent-rose); }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-deep);
+            color: #ffffff;
+        }
+
+        /* Subtle Dark Gradient Background (Fast & GPU-Accelerated) */
+        .bg-mesh {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at 50% 0%, rgba(233, 196, 106, 0.08) 0%, rgba(5, 8, 10, 1) 70%);
+            z-index: 0;
+            pointer-events: none;
+            transition: background 0.5s ease;
+        }
+
+        /* HEADER */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            padding: calc(var(--safe-top) + 12px) calc(var(--safe-right) + 20px) 12px calc(var(--safe-left) + 20px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--header-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        header.hidden {
+            transform: translateY(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .header-left, .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-action {
+            background: rgba(255, 255, 255, 0.04);
+            border: none;
+            color: rgba(255, 255, 255, 0.9);
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-action:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--accent);
+        }
+
+        .btn-action:active {
+            transform: scale(0.94);
+        }
+
+        .portal-brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .portal-brand h1 {
+            font-family: 'Baskervville', serif;
+            font-size: 1.15rem;
+            letter-spacing: 3px;
+            font-weight: 400;
+            color: #ffffff;
+            text-transform: uppercase;
+        }
+
+        .portal-brand span {
+            font-size: 0.6rem;
+            color: var(--accent);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 1px;
+            font-weight: 500;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            font-size: 0.72rem;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        /* MINIMAL DRAWER SIDEBAR */
+        .sidebar-drawer {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100%;
+            background: var(--surface-glass);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            z-index: 2000;
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: calc(var(--safe-top) + 24px) 20px calc(var(--safe-bottom) + 20px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .sidebar-drawer.active {
+            transform: translateX(300px);
+            box-shadow: 15px 0 40px rgba(0,0,0,0.6);
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(3px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 1999;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .client-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            margin-bottom: 20px;
+        }
+
+        .avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: var(--accent);
+            color: #05080a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .profile-details h3 {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .profile-details p {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.5);
+            margin-top: 1px;
+        }
+
+        .nav-section {
+            margin-bottom: 20px;
+        }
+
+        .nav-label {
+            font-size: 0.62rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            margin: 0 0 10px 6px;
+            display: block;
+            opacity: 0.8;
+            font-weight: 600;
+        }
+
+        .nav-link {
+            padding: 12px 14px;
+            margin: 4px 0;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.02);
+            color: rgba(255,255,255,0.8);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+            text-decoration: none;
+        }
+
+        .nav-link i {
+            color: var(--accent);
+            width: 18px;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255, 255, 255, 0.07);
+            color: #ffffff;
+        }
+
+        .nav-link.active {
+            font-weight: 500;
+        }
+
+        /* PREFERENCE CHIPS */
+        .pref-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: rgba(255,255,255,0.02);
+            padding: 12px;
+            border-radius: 14px;
+        }
+
+        .pref-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .theme-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .dot:hover { transform: scale(1.15); }
+        .dot.gold { background: var(--accent-gold); }
+        .dot.mint { background: var(--accent-mint); }
+        .dot.cyan { background: var(--accent-cyan); }
+        .dot.rose { background: var(--accent-rose); }
+
+        .drawer-footer {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.3);
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        /* MAIN APP CONTAINER (BORDERLESS, EDGE-TO-EDGE) */
+        .app-viewport {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 50;
+            padding-top: calc(64px + var(--safe-top));
+            transition: padding-top 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .app-viewport.full-immersive {
+            padding-top: 0;
+        }
+
+        .iframe-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border: 0 !important;
+            outline: 0 !important;
+            background: transparent;
+            overflow: hidden;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: 0 !important;
+            outline: 0 !important;
+            background: transparent;
+            display: block;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        iframe.loading {
+            opacity: 0;
+        }
+
+        /* FAST LOADER INDICATOR */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background: var(--accent);
+            z-index: 3000;
+            transition: width 0.3s ease, opacity 0.3s ease;
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        /* FLOATING FULLSCREEN TOGGLE BUTTON */
+        .fab-fullscreen {
+            position: fixed;
+            right: calc(var(--safe-right) + 20px);
+            bottom: calc(var(--safe-bottom) + 20px);
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            background: rgba(12, 18, 24, 0.75);
+            border: none;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            cursor: pointer;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            transition: all 0.25s ease;
+            font-size: 1.1rem;
+        }
+
+        .fab-fullscreen:hover {
+            transform: scale(1.08);
+            background: rgba(20, 28, 36, 0.9);
+        }
+
+        .fab-fullscreen:active {
+            transform: scale(0.92);
+        }
+
+        /* QUICK MODAL NOTIFICATION */
+        .toast {
+            position: fixed;
+            bottom: calc(var(--safe-bottom) + 75px);
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(15, 23, 30, 0.92);
+            backdrop-filter: blur(15px);
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            z-index: 2500;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast i {
+            color: var(--accent);
+        }
+
+        @media (max-width: 600px) {
+            .status-badge span { display: none; }
+            .portal-brand h1 { font-size: 1rem; letter-spacing: 2px; }
+            .fab-fullscreen { width: 42px; height: 42px; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body class="theme-gold">
+
+    <div class="bg-mesh"></div>
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="overlay" id="overlay"></div>
+
+    <!-- CLEAN TOP HEADER -->
+    <header id="header">
+        <div class="header-left">
+            <button class="btn-action" id="menuBtn" aria-label="Open Drawer Navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                <span>CLIENT ACTIVE</span>
+            </div>
+        </div>
+
+        <div class="portal-brand">
+            <h1>SERENITY</h1>
+            <span>CLIENT PORTAL</span>
+        </div>
+
+        <div class="header-right">
+            <button class="btn-action" id="refreshBtn" title="Reload Frame" aria-label="Reload View">
+                <i class="fas fa-rotate-right"></i>
+            </button>
+            <button class="btn-action" id="infoBtn" title="Portal Information" aria-label="Portal Info">
+                <i class="fas fa-circle-info"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MINIMAL OVERLAY DRAWER -->
+    <aside class="sidebar-drawer" id="sidebar">
+        <div>
+            <div class="client-profile">
+                <div class="avatar">C</div>
+                <div class="profile-details">
+                    <h3>Client Workspace</h3>
+                    <p>Serenity VIP Portal Access</p>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <span class="nav-label">Direct Navigation</span>
+                
+                <a class="nav-link active" data-src="https://script.google.com/macros/s/AKfycbwKA_f8ET3wnWLERljpsTu4LguT2qd0TeDKYz8_Abz0Sy_Cjnq5b4PiY_MFd5TBn4L3/exec">
+                    <i class="fas fa-house"></i>
+                    <span>Client Hub</span>
+                </a>
+
+                <a class="nav-link" data-src="https://script.google.com/macros/s/AKfycbwKA_f8ET3wnWLERljpsTu4LguT2qd0TeDKYz8_Abz0Sy_Cjnq5b4PiY_MFd5TBn4L3/exec">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>My Dashboard</span>
+                </a>
+
+                <a class="nav-link" data-src="https://script.google.com/macros/s/AKfycbwKA_f8ET3wnWLERljpsTu4LguT2qd0TeDKYz8_Abz0Sy_Cjnq5b4PiY_MFd5TBn4L3/exec">
+                    <i class="fas fa-headset"></i>
+                    <span>Support & Help</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <span class="nav-label">Preferences</span>
+                <div class="pref-group">
+                    <div class="pref-row">
+                        <span>Color Theme</span>
+                        <div class="theme-dots">
+                            <div class="dot gold" data-theme="gold" title="Gold Accent"></div>
+                            <div class="dot mint" data-theme="mint" title="Mint Accent"></div>
+                            <div class="dot cyan" data-theme="cyan" title="Cyan Accent"></div>
+                            <div class="dot rose" data-theme="rose" title="Rose Accent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="drawer-footer">
+            SERENITY CLIENT PORTAL • LIGHTNING MODE
+        </div>
+    </aside>
+
+    <!-- BORDERLESS EDGE-TO-EDGE IFRAME VIEWPORT -->
+    <main class="app-viewport" id="appViewport">
+        <div class="iframe-wrapper">
+            <iframe id="clientFrame" 
+                    src="https://script.google.com/macros/s/AKfycbwKA_f8ET3wnWLERljpsTu4LguT2qd0TeDKYz8_Abz0Sy_Cjnq5b4PiY_MFd5TBn4L3/exec" 
+                    title="Serenity Client Frame" 
+                    allow="geolocation; microphone; camera">
+            </iframe>
+        </div>
+    </main>
+
+    <!-- IMMERSIVE FULLSCREEN FAB -->
+    <button class="fab-fullscreen" id="fabFull" title="Toggle Fullscreen Mode" aria-label="Toggle Fullscreen">
+        <i class="fas fa-expand" id="fabIcon"></i>
+    </button>
+
+    <!-- TOAST NOTIFICATION -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMsg">Portal Loaded Successfully</span>
+    </div>
+
+    <script>
+    (() => {
+        // --- DOM ELEMENTS ---
+        const appViewport = document.getElementById('appViewport');
+        const header = document.getElementById('header');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const clientFrame = document.getElementById('clientFrame');
+        const progressBar = document.getElementById('progressBar');
+        const fabFull = document.getElementById('fabFull');
+        const fabIcon = document.getElementById('fabIcon');
+        const toast = document.getElementById('toast');
+
+        // --- STATE MANAGEMENT ---
+        let isFull = localStorage.getItem('serenity_full_mode') === 'true';
+
+        // --- PROGRESS BAR CONTROL ---
+        const startLoading = () => {
+            progressBar.style.opacity = '1';
+            progressBar.style.width = '30%';
+            clientFrame.classList.add('loading');
+        };
+
+        const finishLoading = () => {
+            progressBar.style.width = '100%';
+            setTimeout(() => {
+                progressBar.style.opacity = '0';
+                progressBar.style.width = '0%';
+                clientFrame.classList.remove('loading');
+            }, 300);
+        };
+
+        // Trigger loader on initial view
+        startLoading();
+        clientFrame.onload = finishLoading;
+
+        // --- SIDEBAR DRAWER TOGGLE ---
+        const toggleDrawer = () => {
+            const active = sidebar.classList.toggle('active');
+            overlay.classList.toggle('active', active);
+        };
+
+        document.getElementById('menuBtn').onclick = toggleDrawer;
+        overlay.onclick = toggleDrawer;
+
+        // --- FULLSCREEN IMMERSIVE TOGGLE ---
+        const setFullscreenMode = (enable) => {
+            isFull = enable;
+            localStorage.setItem('serenity_full_mode', enable);
+            
+            appViewport.classList.toggle('full-immersive', enable);
+            header.classList.toggle('hidden', enable);
+            fabIcon.className = enable ? 'fas fa-compress' : 'fas fa-expand';
+
+            showToast(enable ? 'Immersive Full Mode Active' : 'Standard Header Mode');
+        };
+
+        // Initialize saved mode
+        if (isFull) {
+            appViewport.classList.add('full-immersive');
+            header.classList.add('hidden');
+            fabIcon.className = 'fas fa-compress';
+        }
+
+        fabFull.onclick = () => setFullscreenMode(!isFull);
+
+        // --- NAVIGATION LINKS SWITCHING ---
+        document.querySelectorAll('.nav-link[data-src]').forEach(link => {
+            link.onclick = (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+
+                const targetUrl = link.getAttribute('data-src');
+                startLoading();
+                clientFrame.src = targetUrl;
+                toggleDrawer();
+            };
+        });
+
+        // --- COLOR THEME SELECTION ---
+        document.querySelectorAll('.dot').forEach(dot => {
+            dot.onclick = () => {
+                const theme = dot.getAttribute('data-theme');
+                document.body.className = `theme-${theme}`;
+                showToast(`Theme updated to ${theme.toUpperCase()}`);
+            };
+        });
+
+        // --- QUICK ACTIONS ---
+        document.getElementById('refreshBtn').onclick = () => {
+            startLoading();
+            clientFrame.src = clientFrame.src;
+            showToast('Reloading Client Portal View');
+        };
+
+        document.getElementById('infoBtn').onclick = () => {
+            showToast('Serenity Client View v3.0 • Fast Mode');
+        };
+
+        // --- TOAST HELPER ---
+        let toastTimeout;
+        const showToast = (msg) => {
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
+        };
+    })();
+    </script>
+</body>
+</html>
